@@ -1,3 +1,4 @@
+<h2>Fake rest api</h2>
 <ul>
   <li>GET /api/student/ to fetch all students.</li>
     <li>GET /api/student/1/ to fetch the student with ID 1.</li>
