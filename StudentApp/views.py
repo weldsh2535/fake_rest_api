@@ -1,50 +1,48 @@
 from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt  # Fix the typo here
-from rest_framework.parsers import JSONParser
-from django.http.response import JsonResponse
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 from StudentApp.models import Students
 from StudentApp.serializers import StudentSerializer
 
-@csrf_exempt
-def studentApi(request, id=0):  # Also fixed typo in 'request'
-    if request.method == 'GET':
-        if id > 0:
-            try:
-                student = Students.objects.get(StudentId=id)
-                student_serializer = StudentSerializer(student)
-                return JsonResponse(student_serializer.data, safe=False)
-            except Students.DoesNotExist:
-                return JsonResponse({"message": "Student not found"}, status=404)
-        else:
-            students = Students.objects.all()
-            student_serializer = StudentSerializer(students, many=True)
-            return JsonResponse(student_serializer.data, safe=False)
+@api_view(['GET'])
+def get_student(request):
+     students = Students.objects.all()
+     student_serializer = StudentSerializer(students, many=True)
+     return Response(student_serializer.data)
+ 
+@api_view(['POST'])
+def create_student(resquest):
+    student_data = resquest.data
+    student_serializer = StudentSerializer(data=student_data)
+    if student_serializer.is_valid():
+        student_serializer.save()
+        return Response(student_serializer.data, status=status.HTTP_201_CREATED)
+    return Response(student_serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+@api_view(['PUT','GET','DELETE'])
+def student_detail(request,pk):
+    try:
+        student = Students.objects.get(pk=pk)
+    except Students.DoesNotExist:
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
-    elif request.method == 'POST':
-        student_data = JSONParser().parse(request)
-        student_serializer = StudentSerializer(data=student_data)
-        if student_serializer.is_valid():
-            student_serializer.save()
-            return JsonResponse("Add Success", safe=False)
-        return JsonResponse("Failed to Add", safe=False)
+    if request.method == 'GET':
+        try:
+            student = Students.objects.get(StudentId=pk)
+            student_serializer = StudentSerializer(student)
+            return Response(student_serializer.data, status=status.HTTP_200_OK)
+        except Students.DoesNotExist:
+            return Response({"message": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
     
     elif request.method == 'PUT':
-        if id:
-            student_data = JSONParser().parse(request)
-            try:
-                student = Students.objects.get(StudentId=id)
-                student_serializer = StudentSerializer(student, data=student_data)
-                if student_serializer.is_valid():
-                    student_serializer.save()
-                    return JsonResponse("Update Success", safe=False)
-                return JsonResponse("Failed to Update", safe=False)
-            except Students.DoesNotExist:
-                return JsonResponse({'message': 'Student not found'}, status=404)
-        else:
-            return JsonResponse({'message': 'ID is required for update'}, status=400)
-    
+        student_data = request.data
+        student_serializer = StudentSerializer(student, data=student_data)
+        if student_serializer.is_valid():
+            student_serializer.save()
+            return Response(student_serializer.data)
+        return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'DELETE':
-        student = Students.objects.get(StudentId=id)
+        student = Students.objects.get(StudentId=pk)
         student.delete()
-        return JsonResponse("Delete Successfully", safe=False)
+        return Response(status=status.HTTP_204_NO_CONTENT)
