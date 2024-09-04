@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'StudentApp'
+    'sms_api'
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -86,7 +86,7 @@ pymysql.install_as_MySQLdb()
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'studentsms',
+        'NAME': 'student_sms',
         'USER':'root',
         'PASSWORD':'mekdes22@',
         'HOST':'127.0.0.1',
@@ -139,3 +139,5 @@ APPEND_SLASH = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+AUTH_USER_MODEL = 'sms_api.CustomUser'
