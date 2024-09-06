@@ -17,13 +17,58 @@ def get_student(request):
      return Response(student_serializer.data)
  
 @api_view(['POST'])
-def create_student(resquest):
-    student_data = resquest.data
-    student_serializer = StudentSerializer(data=student_data)
-    if student_serializer.is_valid():
-        student_serializer.save()
-        return Response(student_serializer.data, status=status.HTTP_201_CREATED)
-    return Response(student_serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+def create_student(request):
+    # Creating the user data
+    user_data = {
+        "username": request.data.get("username"),
+        "password": request.data.get("password"),
+        "email": request.data.get("email"),
+        "first_name": request.data.get("first_name"),
+        "last_name": request.data.get("last_name"),
+        "user_type": 3,  # 3 indicates Student
+    }
+
+    user_serializer = CustomUserSerializer(data=user_data)
+    # print(user_serializer)
+    if user_serializer.is_valid():
+        user = user_serializer.save()  # Save the CustomUser instance
+
+        curse_id = request.data.get("curse_id")
+        address = request.data.get("address")
+        profile_picture = request.data.get("profile_picture")
+        gender = request.data.get("gender")
+
+        print("Course Id is", curse_id)
+
+        # Ensure that 'curse_id' is provided and not null
+        if not curse_id:
+            return Response({"error": "curse_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create the student instance
+        student = Students.objects.create(
+            user=user,
+            curse_id_id=curse_id,
+            address=address,
+            profile_picture=profile_picture,
+            gender=gender
+        )
+
+        # Prepare the response data
+        student_data = {
+            "user": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "address": student.address,
+            "email": user.email,
+            "curse_id": student.curse_id_id,
+        }
+
+        return Response(student_data, status=status.HTTP_201_CREATED)
+
+    else:
+        # Return errors from the CustomUserSerializer
+        return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['PUT','GET','DELETE'])
 def student_detail(request,pk):
     try:
@@ -345,27 +390,20 @@ def add_staff(request):
         "user_type": 2,  # 2 indicates Staff
     }
     user_serializer = CustomUserSerializer(data=user_data)
-
+    # print("Error of staff adding user", user_serializer)
     if user_serializer.is_valid():
         user = user_serializer.save()  # Save the CustomUser instance
-
         # Creating the staff data
         staff_data = {
-            "user": user.id,  # Assign the user ID to the staff data
-            "name": request.data.get("name"),
+            "user": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name, # Assign the user ID to the staff data
+            "email": user.email,
             "address": request.data.get("address"),
         }
-        staff_serializer = StaffSerializer(data=staff_data)
-
-        if staff_serializer.is_valid():
-            staff = staff_serializer.save(commit=False)
-            staff.user = user  # Set the user field manually
-            staff.save()  # Save the Staffs instance
-
-            return Response(staff_serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            # Return errors from the StaffSerializer
-            return Response(staff_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user.staffs.address = request.data.get("address")
+        user.staffs.save()
+        return Response(staff_data, status=status.HTTP_201_CREATED)
     else:
         # Return errors from the CustomUserSerializer
         return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)

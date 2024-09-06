@@ -15,6 +15,8 @@ class StaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = Staffs
         fields = '__all__'
+
+
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
